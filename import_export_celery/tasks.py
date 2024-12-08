@@ -4,6 +4,8 @@ import os
 
 from celery import shared_task
 
+from import_export.formats.base_formats import BINARY_FORMATS
+
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.cache import cache
@@ -235,8 +237,9 @@ def run_export_job(pk):
 
     resource = Resource(export_job=export_job)
 
-    data = resource.export(queryset)
     format = get_format(export_job)
+    force_native_type = type(format) in BINARY_FORMATS
+    data = resource.export(queryset, force_native_type=force_native_type)
     serialized = format.export_data(data)
     change_job_status(export_job, "export", "Export complete")
     filename = "{app}-{model}-{date}.{extension}".format(
